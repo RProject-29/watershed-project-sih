@@ -27,9 +27,27 @@ import { ProcessingPipelineModal } from './components/ProcessingPipelineModal';
 import { ReportExporter } from './components/ReportExporter';
 
 export function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<string>('District Watershed Officer');
-  const [userName, setUserName] = useState<string>('Dr. R. K. Sharma');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('jaldrishti_auth_active') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [userRole, setUserRole] = useState<string>(() => {
+    try {
+      return localStorage.getItem('jaldrishti_user_role') || 'District Watershed Officer';
+    } catch {
+      return 'District Watershed Officer';
+    }
+  });
+  const [userName, setUserName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('jaldrishti_user_name') || 'Dr. R. K. Sharma';
+    } catch {
+      return 'Dr. R. K. Sharma';
+    }
+  });
 
   const [interventions, setInterventions] = useState<Intervention[]>(() => storageService.loadInterventions());
   const uniqueInterventions = Array.from(new Map(interventions.map(i => [i.id, i])).values());
@@ -66,6 +84,13 @@ export function App() {
     setUserRole(role);
     setUserName(name);
     setIsLoggedIn(true);
+    try {
+      localStorage.setItem('jaldrishti_auth_active', 'true');
+      localStorage.setItem('jaldrishti_user_role', role);
+      localStorage.setItem('jaldrishti_user_name', name);
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
     const freshData = storageService.loadInterventions();
     setInterventions(freshData);
     if (freshData.length > 0 && !freshData.find(i => i.id === selectedId)) {
@@ -75,6 +100,11 @@ export function App() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    try {
+      localStorage.removeItem('jaldrishti_auth_active');
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
   };
 
   const handleDeleteIntervention = (id: string) => {
